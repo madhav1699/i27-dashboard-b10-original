@@ -7,6 +7,7 @@ on:
     paths:
       - "src/**"
       - "Dockerfile"
+      - ".github/**"
   pull_request:
     branches:
       - master
