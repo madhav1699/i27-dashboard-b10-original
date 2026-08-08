@@ -1,6 +1,6 @@
 name: CI-Project-practise
 on:
-  workflow_disptach:
+  workflow_dispatch:
   push:
     branches:
       - master
