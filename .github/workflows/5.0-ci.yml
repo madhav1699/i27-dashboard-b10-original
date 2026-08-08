@@ -23,13 +23,17 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+
+      - name: To check java version
         run: java --version
 
-      - name: Testing and uploading test results
+      - name: maven testing
         run: mvn test
+
+      - name: uploading test results
         uses: actions/upload-artifact@v4
         with:
-          name: test results
-          path: test-results/
+          name: test results madhav
+          path: target/surefire-reports/
           if-no-files-found: error
           retention-days: 30
