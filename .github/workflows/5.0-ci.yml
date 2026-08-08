@@ -6,9 +6,9 @@ on:
   pull_request:
     branches:
       - master
-  paths:
-    - 'src/**'
-    - 'pom.xml'
+    paths:
+      - 'src/**'
+      - 'pom.xml'
 jobs:
   test-job:
     name: Codechekout and Test
