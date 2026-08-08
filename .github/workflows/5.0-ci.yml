@@ -1,5 +1,3 @@
-
-
 name: CI_Project_5.0
 on:
   push:
@@ -34,6 +32,8 @@ jobs:
           path: test-results/
           if-no-files-found: error
           retention-days: 30
-        
 
-  
+
+
+          
+          retention-days: 3
