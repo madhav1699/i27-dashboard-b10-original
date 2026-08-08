@@ -33,6 +33,3 @@ jobs:
           path: test-results/
           if-no-files-found: error
           retention-days: 30
-        
-
-  
