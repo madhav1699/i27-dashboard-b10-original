@@ -1,0 +1,39 @@
+
+
+name: CI_Project_5.0
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  paths:
+    - 'src/**'
+    - 'pom.xml'
+jobs:
+  test-job:
+    name: Codechekout and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code-checkout
+      - uses: actions/checkout@v4
+
+      - name: Java-Setup
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: echo "java version is: $(java --version)"
+
+      - name: Testing and uploading test results
+      - run: mvn test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test results
+          path: test-results/
+          if-no-files-found: error
+          retention-days: 30
+        
+
+  
