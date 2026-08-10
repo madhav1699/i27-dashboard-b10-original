@@ -7,7 +7,6 @@ on:
       - "src/**"
       - "Dockerfile"
       - "pom.xml"
-      - ".github/**"
   pull_request:
     branches:
       - main
@@ -15,41 +14,25 @@ on:
       - "src/**"
       - "Dockerfile"
       - "pom.xml"
+      - ".github/**"
   workflow_dispatch:
 jobs:
-  code-checkout:
+  all-in-one:
+    name: code,javaSetup, build, upload
     runs-on: ubuntu-latest
     steps:
       - name: code-checkout
         uses: actions/checkout@v4
-  
-  setup-build-environment:
-    name: This job will install java of specific version
-    runs-on: ubuntu-latest
-    needs: 
-      - code-checkout
-    steps:
+
       - name: setup-build-environment
         uses: actions/setup-java@v5
         with: 
           distribution: temurin
           java-version: '21'
-  
-  build-code:
-    name: This job will do maven build
-    runs-on: ubuntu-latest
-    needs:
-      - setup-build-environment
-    steps:
+
       - name: build-code
         run: mvn clean package
 
-  upload-artifactory:
-    name: This job will upload artifactory
-    runs-on: ubuntu-latest
-    needs:
-      - build-code
-    steps:
       - name: upload-artifactory
         uses: actions/upload-artifact@v4
         with:
