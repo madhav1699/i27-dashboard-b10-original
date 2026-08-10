@@ -38,4 +38,8 @@ jobs:
         with:
           name: generate jar artifacgory uploading..
           path: target/*.jar
-          retention-days: 30    
+          retention-days: 30   
+      - name: listing the files
+        run: |
+          pwd
+          ls -ltr 
