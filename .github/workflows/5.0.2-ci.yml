@@ -1,0 +1,109 @@
+name: Simple-CI-pipeline
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "src/**"
+      - "Dockerfile"
+      - "pom.xml"
+      - ".github/**"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "Dockerfile"
+      - "pom.xml"
+
+  workflow_dispatch:
+
+jobs:
+
+  code-checkout:
+    name: Code Checkout
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Upload source code
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-code
+          path: .
+          retention-days: 1
+
+
+  setup-build-environment:
+    name: JavaSetup
+    runs-on: ubuntu-latest
+    needs:
+      - code-checkout
+
+    steps:
+      - name: Download source code
+        uses: actions/download-artifact@v4
+        with:
+          name: source-code
+          path: .
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Check Java version
+        run: java --version
+
+
+  build-code:
+    name: Maven Build
+    runs-on: ubuntu-latest
+    needs:
+      - setup-build-environment
+
+    steps:
+      - name: Download source code
+        uses: actions/download-artifact@v4
+        with:
+          name: source-code
+          path: .
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Maven build
+        run: mvn clean package
+
+      - name: Upload generated JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-jar
+          path: target/*.jar
+          if-no-files-found: error
+          retention-days: 30
+
+
+  upload-artifactory:
+    name: Upload JAR Artifact
+    runs-on: ubuntu-latest
+    needs:
+      - build-code
+
+    steps:
+      - name: Download generated JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-jar
+          path: target/
+
+      - name: List generated JAR
+        run: ls -lh target/
