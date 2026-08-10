@@ -1,4 +1,4 @@
-name: Simple-CI-pipeline
+name: Simple-CI-pipeline_V2
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - "src/**"
       - "Dockerfile"
       - "pom.xml"
-      - ".github/**"
+     
 
   pull_request:
     branches:
