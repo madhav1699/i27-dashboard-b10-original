@@ -26,6 +26,8 @@ jobs:
 
       - name: upload-artifact
         uses: actions/upload-artifact@v5
+        with:
+          path: target/*.jar
 
       - name: list the files
         run: |
