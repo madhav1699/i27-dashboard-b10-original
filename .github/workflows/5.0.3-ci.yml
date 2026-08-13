@@ -8,27 +8,27 @@ on:
       - ".github/**"
 jobs:
   code,setup,build,upload-artifact:
-  runs-on: ubuntu-latest
-  steps:
-    - name: code-checkout
-      uses: actions/checkout@v4
+    runs-on: ubuntu-latest
+    steps:
+      - name: code-checkout
+        uses: actions/checkout@v4
 
-    - name: setup-java
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: "21"
+      - name: setup-java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
 
-    - name: Code-build
-      run: |
-        mvn clean package
-        echo "code build is completed"
+      - name: Code-build
+        run: |
+          mvn clean package
+          echo "code build is completed"
 
-    - name: upload-artifact
-      uses: actions/upload-artifact@v5
+      - name: upload-artifact
+        uses: actions/upload-artifact@v5
 
-    - name: list the files
-      run: |
-        pwd
-        ls -ltr
+      - name: list the files
+        run: |
+          pwd
+          ls -ltr
 
