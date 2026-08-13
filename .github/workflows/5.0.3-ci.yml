@@ -7,7 +7,7 @@ on:
     paths-ignore:
       - ".github/**"
 jobs:
-  code,setup,build,upload-artifact:
+  code-setup-build-upload-artifact:
     runs-on: ubuntu-latest
     steps:
       - name: code-checkout
