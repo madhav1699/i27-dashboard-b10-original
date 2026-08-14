@@ -14,7 +14,7 @@ on:
       - "src/**"
       - "Dockerfile"
       - "pom.xml"
-      - ".github/**"
+      
   workflow_dispatch:
 jobs:
   all-in-one:
