@@ -1,0 +1,17 @@
+# defining variables at
+# workflow level, job level, step level
+
+name: 6.0.1-environmental-variables
+on:
+  workflow_dispatch:
+jobs:
+  envjob1:
+    runs-on: ubuntu-latest
+    env:
+      app: "Swiggy"
+      environement: "Prod"
+    steps:
+      - name: env's at job level
+        run: |
+          echo "Application Name is: $app"
+          echo "Application deployed at: $environment"
