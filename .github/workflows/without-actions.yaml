@@ -32,18 +32,4 @@ jobs:
         run: |
           java -version
           echo "JAVA_HOME: $JAVA_HOME"
-<<<<<<< HEAD
 
-# ════════════════════════════════════════════════════════════
-# Notice how much work is needed just to:
-#   1. Clone the repo
-#   2. Install Java
-#
-# And this does not even handle:
-#   → Java version conflicts
-#   → Maven cache
-#   → Download failures
-#   → Different OS compatibility
-# ════════════════════════════════════════════════════════════
-=======
->>>>>>> 31da0b8134c689c02a363cb582a441c7a77bef6e

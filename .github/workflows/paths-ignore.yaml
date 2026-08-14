@@ -4,6 +4,7 @@ on:
       paths-ignore: 
         - README.md
         - docs/**
+        - ".github/**"
 jobs: 
     show-information:
         name: Push Trigger info
