@@ -1,0 +1,82 @@
+name: CI-Promotion-file
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target Environment
+        type: choice
+        options:
+          - production
+          - staging
+          - dev
+      version:
+        description: Version to Deploy?
+        type: string
+        default: v1.0.0
+  push:
+    branches:
+      - master
+    paths:
+      - "Dockerfile"
+      - "pom.xml"
+      - "src/**"
+env:
+  image_name: madhav2026/I27-dashboard-app
+
+jobs:
+  job1:
+    name: Code checkout, Build, Artifact, CommitTag
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{steps.tag1.outputs.value}}
+    steps:
+      - name: code-checkout
+        uses: actions/checkout@v4
+
+      - name: setup-java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      
+      - name: maven build
+        run: maven clean package
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: myjarfile
+          path: target/*.jar
+
+      - name: creating image tag
+        id: tag1
+        run: echo "value=${{github.sha}}" >> $GITHUB_OUTPUT
+
+  job2:
+    name: Get code, Docker Build, login, Push
+    runs-on: ubuntu-latest
+    needs: job1
+    steps:
+      - name: checkout-code
+        uses: actions/checkout@v4
+
+      - name: Docker Build
+        run: docker build -t ${{env.image_name}}:${{needs.job1.outputs.image_tag}} .
+      
+      - name: Docker Login
+        uses: docker/login-action@v8
+        with:
+          username: ${{vars.docker_username}}
+          password: ${{secrets.docker_password}}
+
+      - name: Docker Push
+        run: docker push ${{env.image_name}}:${{needs.job1.outputs.image_tag}}
+
+      - name: Docker Summary
+        run: |
+          echo "Docker image name is: ${{env.image_name}}:${{needs.job1.outputs.image_tag}}"
+          
+
+
+          
