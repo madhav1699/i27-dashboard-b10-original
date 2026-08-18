@@ -65,7 +65,7 @@ jobs:
         run: docker build -t ${{env.image_name}}:${{needs.job1.outputs.image_tag}} .
       
       - name: Docker Login
-        uses: docker/login-action@v8
+        uses: docker/login-action@v3
         with:
           username: ${{vars.docker_username}}
           password: ${{secrets.docker_password}}
