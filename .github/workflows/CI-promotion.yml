@@ -93,7 +93,7 @@ jobs:
     if: ${{inputs.environment == 'staging'}}
     name: stage environment
     runs-on: ubuntu-latest
-    needs: [job1, job2, job3]
+    needs: [job1, job2]
     environment:
       name: staging
       url: http://mystage.usaa.com
@@ -106,7 +106,7 @@ jobs:
     if: ${{inputs.environment == 'production'}}
     name: prod environment
     runs-on: ubuntu-latest
-    needs: [job1, job2, job3, job4]
+    needs: [job1, job2]
     environment:
       name: production
       url: http://mydprod.usaa.com
