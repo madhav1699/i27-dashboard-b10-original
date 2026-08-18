@@ -41,7 +41,7 @@ jobs:
           cache: maven
       
       - name: maven build
-        run: maven clean package
+        run: mvn clean package
 
       - name: upload artifact
         uses: actions/upload-artifact@v5
