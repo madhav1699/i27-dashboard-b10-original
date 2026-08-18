@@ -21,7 +21,7 @@ on:
       - "pom.xml"
       - "src/**"
 env:
-  image_name: madhav2026/I27-dashboard-app
+  image_name: madhav2026/i27-dashboard-app
 
 jobs:
   job1:
