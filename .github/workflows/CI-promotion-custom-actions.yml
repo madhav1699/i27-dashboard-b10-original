@@ -85,7 +85,7 @@ jobs:
       - name: Docker result summary
         id: result-tag
         run: |
-          echo "${{needs.result-tag.outputs.docker_result}}"
+          echo "${{steps.result-tag.outputs.docker_result}}"
       # - name: Docker Build
       #   run: docker build -t ${{env.image_name}}:${{needs.job1.outputs.image_tag}} .
       
