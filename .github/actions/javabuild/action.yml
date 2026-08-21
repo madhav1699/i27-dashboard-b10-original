@@ -32,7 +32,7 @@ runs:
         distribution: ${{inputs.distribution}}
 
     - name: running tests
-      if (inputs.run-tests == 'true')
+      if: ${{inputs.run-tests == 'true'}}
       shell: bash
       working-directory: ${{inputs.working-directory}}
       run: |
