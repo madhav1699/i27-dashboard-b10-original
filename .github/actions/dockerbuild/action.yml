@@ -1,0 +1,52 @@
+name: docker-build-custom-action
+
+inputs:
+  docker_username:
+    description: provide docker username
+    required: true
+  docker_password:
+    description: provide docker password
+    required: true
+  image_name:
+    description: provide docker image name
+    required: true
+  image_tag:
+    description: provide docker tag name
+    required: true
+
+outputs:
+  docker_result:
+    description: provides docker result
+    value: ${{steps.tag.outputs.result}}
+
+runs:
+  using: composite
+  steps:
+    - name: Docker Build
+      shell: bash
+      working-directory: ${{inputs.working-directory}}
+      run: docker build -t ${{inputs.image_name}}:${{inputs.tag_name}} .
+
+    - name: Docker login
+      uses: docker/login-action@v3
+      with:
+        username: ${{inputs.docker_username}}
+        password: ${{inputs.docker_password}}
+
+    - name: Docker Push
+      shell: bash
+      working-directory: ${{inputs.working-directory}}
+      run: docker push ${{inputs.image_name}}:${{inputs.image_tag}}
+
+    - name: Docker summary
+      shell: bash
+      id: tag
+      working-directory: ${{inputs.working-directory}}
+      run: |
+        echo "result= Docker image is Build and pushed successfully!"
+        echo "result= Docker image: ${{inputs.image_name}}:${{inputs.image_tag}}"
+
+        
+
+
+
