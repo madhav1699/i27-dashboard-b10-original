@@ -3,7 +3,7 @@ name: java-build-custom-actions
 inputs:
   java-version:
     description: selecting java version
-    required: false
+    required: true
     default: '21'
 
   distribution:
