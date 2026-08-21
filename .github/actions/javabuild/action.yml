@@ -1,0 +1,48 @@
+name: java-build-custom-actions
+
+inputs:
+  java-version:
+    description: selecting java version
+    required: false
+    default: '21'
+
+  distribution:
+    description: selecting java distribution
+    required: false
+    default: 'temurin'
+
+  run-tests:
+    description: selecting tests to run or not
+    required: false
+    default: 'true'
+
+  working-directory:
+    decription: selecting work directory
+    required: false
+    default: '.'
+
+
+runs:
+  using: composite
+  steps:
+    - name: setup-java
+      uses: actions/setup-java@v5
+      with:
+        java-version: ${{inputs.java-version}}
+        distribution: ${{inputs.distribution}}
+
+    - name: running tests
+      if (inputs.run-tests == 'true')
+      shell: bash
+      working-directory: ${{inputs.working-directory}}
+      run: |
+        mvn test
+        echo "Test is completed successfully!"
+
+    - name: maven build
+      shell: bash
+      working-directory: ${{inputs.working-directory}}
+      run: |
+        mvn clean package -DskipTests
+        echo "Build is completed successfully!"
+      
