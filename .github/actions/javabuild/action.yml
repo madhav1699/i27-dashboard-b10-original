@@ -3,8 +3,8 @@ name: java-build-custom-actions
 inputs:
   java-version:
     description: selecting java version
-    required: true
-  
+    required: false
+    default: '21'
 
   distribution:
     description: selecting java distribution
@@ -21,6 +21,11 @@ inputs:
     required: false
     default: '.'
 
+outputs:
+  test-result: 
+    value: ${{steps.test.outputs.result}}
+  build-result:
+    value: ${{steps.build.outputs.result}}
 
 runs:
   using: composite
@@ -32,17 +37,24 @@ runs:
         distribution: ${{inputs.distribution}}
 
     - name: running tests
+      id: test
       if: ${{inputs.run-tests == 'true'}}
       shell: bash
       working-directory: ${{inputs.working-directory}}
       run: |
         mvn test
-        echo "Test is completed successfully!"
+        echo "result= Tests are completed successfully!" >> $GITHUB_OUTPUT
+
+    - name: Skipped Tests
+      if: ${{inputs.run-tests != 'true'}}
+      run: |
+        echo "result= Tests are Skipped successfully!" >> $GITHUB_OUTPUT
 
     - name: maven build
+      id: build
       shell: bash
       working-directory: ${{inputs.working-directory}}
       run: |
         mvn clean package -DskipTests
-        echo "Build is completed successfully!"
+        echo "result= Build is completed successfully!" >>GITHUB_OUTPUT
       

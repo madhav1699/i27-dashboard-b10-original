@@ -1,14 +1,14 @@
 name: 13.0.2-Custom-Actions
 on:
   workflow_dispatch:
-    # inputs:
-    #   java-version:
-    #     type: choice
-    #     options: ['17', '21']
-    #     default: '21'
-    #   run-tests:
-    #     type: boolean
-    #     default: true
+    inputs:
+      java-version:
+        type: choice
+        options: ['17', '21']
+        default: '21'
+      run-tests:
+        type: boolean
+        default: true
 
 jobs:
   job1:
@@ -18,8 +18,13 @@ jobs:
       - name: code checkout
         uses: actions/checkout@v5
 
-      - name: java setup and Test
+      - name: java setup, Test and Build
         uses: ./.github/actions/javabuild
-        # with:
-        #   java-version: ${{inputs.java-version}}
-        #   run-tests: ${{inputs.run-tests}}
+        id: action-outputs
+        with:
+          java-version: ${{inputs.java-version}}
+          run-tests: ${{inputs.run-tests}}
+      - name: Overall Pipeline results
+        run: |
+          echo "${{steps.action-outputs.outputs.test-result}}"
+          echo "${{steps.action-outputs.outputs.build-result}}"
