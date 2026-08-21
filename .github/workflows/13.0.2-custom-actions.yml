@@ -1,0 +1,25 @@
+name: 13.0.2-Custom-Actions
+on:
+  workflow_dispatch:
+    inputs:
+      java-version:
+        type: choice
+        options: ['17', '21']
+        default: '21'
+      run-tests:
+        type: boolean
+        default: true
+
+jobs:
+  job1:
+    name: code checkout, Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: code checkout
+        uses: actions/checkout@v5
+
+      - name: java setup and Test
+        uses: ./.github/actions/javabuild
+        with:
+          java-version: ${{inputs.java-version}}
+          run-tests: ${{inputs.run-tests}}
