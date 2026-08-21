@@ -1,4 +1,4 @@
-name: CI-Promotion-file
+name: CI-Promotion-file-Custom-Actions
 on:
   workflow_dispatch:
     inputs:
