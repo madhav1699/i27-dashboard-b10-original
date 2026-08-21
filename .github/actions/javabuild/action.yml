@@ -17,22 +17,23 @@ inputs:
     default: 'true'
 
   working-directory:
-    decription: selecting work directory
+    description: selecting work directory
     required: false
     default: '.'
 
-# outputs:
-#   test-result: 
-#     description: test results
-#     value: ${{steps.test.outputs.result}}
-#   build-result:
-#     description: build results
-#     value: ${{steps.build.outputs.result}}
-
-
 outputs:
-  test-result: ${{steps.test.outputs.result}}
-  build-result: ${{steps.build.outputs.result}}
+  test-result: 
+    description: test results
+    value: ${{steps.test.outputs.result || steps.test_skip.outputs.result}}
+
+  build-result:
+    description: build results
+    value: ${{steps.build.outputs.result}}
+
+
+# outputs:   This is wrong format
+#   test-result: ${{steps.test.outputs.result}}
+#   build-result: ${{steps.build.outputs.result}}
 
 runs:
   using: composite
@@ -54,7 +55,7 @@ runs:
 
     - name: Skipped Tests
       if: ${{inputs.run-tests != 'true'}}
-      id: test
+      id: test_skip
       shell: bash
       working-directory: ${{inputs.working-directory}}
       run: |
