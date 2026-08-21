@@ -43,8 +43,8 @@ runs:
       id: tag
       working-directory: ${{inputs.working-directory}}
       run: |
-        echo "result= Docker image is Build and pushed successfully!"
-        echo "result= Docker image: ${{inputs.image_name}}:${{inputs.image_tag}}"
+        echo "result= Docker image is Build and pushed successfully!"  >> $GITHUB_OUTPUT
+        echo "result= Docker image: ${{inputs.image_name}}:${{inputs.image_tag}}" >> $GITHUB_OUTPUT
 
         
 
