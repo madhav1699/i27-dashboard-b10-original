@@ -4,7 +4,7 @@ inputs:
   java-version:
     description: selecting java version
     required: true
-    default: '21'
+  
 
   distribution:
     description: selecting java distribution
