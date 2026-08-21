@@ -1,14 +1,14 @@
 name: 13.0.2-Custom-Actions
 on:
   workflow_dispatch:
-    inputs:
-      java-version:
-        type: choice
-        options: ['17', '21']
-        default: '21'
-      run-tests:
-        type: boolean
-        default: true
+    # inputs:
+    #   java-version:
+    #     type: choice
+    #     options: ['17', '21']
+    #     default: '21'
+    #   run-tests:
+    #     type: boolean
+    #     default: true
 
 jobs:
   job1:
@@ -20,6 +20,6 @@ jobs:
 
       - name: java setup and Test
         uses: ./.github/actions/javabuild
-        with:
-          java-version: ${{inputs.java-version}}
-          run-tests: ${{inputs.run-tests}}
+        # with:
+        #   java-version: ${{inputs.java-version}}
+        #   run-tests: ${{inputs.run-tests}}
