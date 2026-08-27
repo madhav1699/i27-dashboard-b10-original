@@ -1,0 +1,140 @@
+name: MAIN_CI_01
+on:
+  workflow_dispatch:
+    inputs:
+
+      java-version:
+        description: select java environment version
+        type: choice
+        options: ['17', '21']
+        default: '21'
+      environment: 
+        description: select the deploy environment
+        type: choice
+        options: ['dev', 'staging', 'production']
+        default: 'dev'
+      version:
+        description: select the version to deploy
+        type: string
+        default: '1.0.0'
+      skip-tests:
+        description: skip the tests?
+        type: boolean
+        default: false
+
+  push:
+    branches:
+      - feature-branch
+      - bufix
+      - vulnfix
+    brnaches-ignore:
+      - main
+      - master
+
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+    paths-ignore:
+      - '.github/**'
+
+jobs:
+  job1:
+    name: Code checkout, Build, artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: code checkout
+        uses: actions/check-out@v4
+
+      - name: setup-java environment
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{inputs.java-version}}
+          distribution: 'temurin'
+
+      - name: Build the code
+        run: mvn clean package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: myartifact
+          path: target/*.jar
+
+      - name: CodeBuild Summary
+        run: |
+          pwd
+          echo "Code checkout, Build, Artifact upload is completed successfully!"
+          echo "Application Java Version: ${{inputs.java-version}}"
+          echo "Artifact Jar is: ${{ls -l target/}}"
+
+  job2:
+    name: Docker Build, login and push the image
+    needs: 
+      - job1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker Build
+        run: docker build -t ${{env.image-name}}:${{github.sha}} .
+
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{vars.docker_username}}
+          password: ${{secrets.docker_password}}
+
+      - name: Docker Image Push
+        run: docker push  ${{env.image-name}}:${{github.sha}}
+
+      - name: Docker Push Summary
+        run: |
+          echo "Docker Build and Image Pushed Completed Successfully!"
+          echo "Docker Image name is: ${{env.image-name}}:${{github.sha}}"
+
+  job3:
+    name: Dev Environment
+    needs: [job1, job2]
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: www.myhcltech.dev
+    if: ${{inputs.environment == 'dev'}}
+    steps:
+      - name: Dev environment Page
+        run: |
+          echo "Dev environment Validation successfull!"  
+
+  job4:
+    name: Stage Environment
+    needs: [job1, job2]
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: www.myhcltech.stage
+    if: ${{inputs.environment == 'staging'}}
+    steps:
+      - name: Stage environment Page
+        run: |
+          echo "Stage environment Validation successfull!" 
+
+  job5:
+    name: Production Environment
+    needs: [job1, job2]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: www.myhcltech.prod
+    if: ${{inputs.environment == 'production'}}
+    steps:
+      - name: Production environment Page
+        run: |
+          echo "Production environment Validation successfull!" 
+
+
+          
+          
+
+
