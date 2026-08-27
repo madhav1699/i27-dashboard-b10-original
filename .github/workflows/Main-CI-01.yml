@@ -37,6 +37,8 @@ on:
       - 'Dockerfile'
     paths-ignore:
       - '.github/**'
+env:
+  image-name: madhav2026/i27-dashboard-app
 
 jobs:
   job1:
@@ -66,7 +68,7 @@ jobs:
           pwd
           echo "Code checkout, Build, Artifact upload is completed successfully!"
           echo "Application Java Version: ${{inputs.java-version}}"
-          echo "Artifact Jar is: ${{ls target/}}"
+          echo "Artifact Jar is: ls -l target/"
 
   job2:
     name: Docker Build, login and push the image
