@@ -27,7 +27,7 @@ on:
       - feature-branch
       - bufix
       - vulnfix
-    brnaches-ignore:
+    branches-ignore:
       - main
       - master
     paths-ignore:
