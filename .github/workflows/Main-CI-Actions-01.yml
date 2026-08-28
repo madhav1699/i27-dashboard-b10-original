@@ -95,8 +95,8 @@ jobs:
         run: |
           echo "Docker Build and Image Pushed Completed Successfully!"
           echo "Docker Image name is: ${{env.image-name}}:${{github.sha}}"
-          echo "${{steps.action-tag.outputs.docker_build_output}}"
-          echo "${{steps.action-tag.outputs.docker_push_output}}"
+          echo " Dcoker Build result: ${{steps.action-tag.outputs.docker_build_output}}"
+          echo "Docker Push result: ${{steps.action-tag.outputs.docker_push_output}}"
 
   job3:
     name: Dev Environment
