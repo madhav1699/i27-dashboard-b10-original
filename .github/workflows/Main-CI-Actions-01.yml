@@ -83,7 +83,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Docker Build, Login, Push with Custom actions
-        id: actions-tag
+        id: action-tag
         uses: madhav1699/GitHub-custom-actions-myedition/.github/actions/docker-build@main
         with:
           image-name: ${{env.image-name}}
@@ -95,8 +95,8 @@ jobs:
         run: |
           echo "Docker Build and Image Pushed Completed Successfully!"
           echo "Docker Image name is: ${{env.image-name}}:${{github.sha}}"
-          echo "${{steps.actions-tag.outputs.docker_build_output}}"
-          echo "${{steps.actions-tag.outputs.docker_push_output}}"
+          echo "${{steps.action-tag.outputs.docker_build_output}}"
+          echo "${{steps.action-tag.outputs.docker_push_output}}"
 
   job3:
     name: Dev Environment
