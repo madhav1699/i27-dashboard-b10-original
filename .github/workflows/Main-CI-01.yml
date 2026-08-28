@@ -27,16 +27,17 @@ on:
       - feature-branch
       - bufix
       - vulnfix
-    branches-ignore:
-      - main
-      - master
     paths-ignore:
       - '.github/**'
 
   pull_request:
+    branches-ignore:
+      - main
+      - master
     paths:
       - 'src/**'
       - 'Dockerfile'
+    
 
 env:
   image-name: madhav2026/i27-dashboard-app
