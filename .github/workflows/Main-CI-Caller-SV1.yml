@@ -1,0 +1,40 @@
+name: MAIN_CI_CALLER_SV1
+on:
+  workflow_dispatch:
+    inputs:
+      java-version:
+        description: select java environment version
+        type: choice
+        options: ['17', '21']
+        default: '21'
+      distribution:
+        type: string
+        default: 'temurin'
+      artifact-name:
+          type: string
+          default: myjarartifact
+      environment: 
+        description: select the deploy environment
+        type: choice
+        options: ['dev', 'staging', 'production']
+        default: 'dev'
+      version:
+        description: select the version to deploy
+        type: string
+        default: '1.0.0'
+      skip-tests:
+        description: skip the tests?
+        type: boolean
+        default: false
+jobs:
+  mainjob:
+    name: This is Caller worflow service v1
+    uses: ./.github/workflows/Main-CI-micro-service-v1.yml
+    with:
+      java-version: ${{inputs.java-version}}
+      distribution: ${{inputs.distribution}}
+      artifact-name: ${{inputs.artifact-name}}
+      environment: ${{inputs.environment}}
+      version: ${{inputs.version}}
+      skip-tests: ${{inputs.skip-tests}}
+    secrets: inherit

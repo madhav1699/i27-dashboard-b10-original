@@ -1,0 +1,142 @@
+name: MAIN_CI_MICRO_SERVICE_V1
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: select java environment version
+        type: string
+        default: '21'
+      distribution:
+        type: string
+        default: 'temurin'
+      artifact-name:
+          type: string
+          default: myjarartifact
+      environment: 
+        description: select the deploy environment
+        type: string
+        default: 'dev'
+      version:
+        description: select the version to deploy
+        type: string
+        default: '1.0.0'
+      skip-tests:
+        description: skip the tests?
+        type: boolean
+        default: false
+
+  push:
+    branches:
+      - feature-branch
+      - bufix
+      - vulnfix
+    paths-ignore:
+      - '.github/**'
+
+  pull_request:
+    branches-ignore:
+      - main
+      - master
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+    
+
+env:
+  image-name: madhav2026/i27-dashboard-app
+
+jobs:
+  job1:
+    name: Code checkout, Build, artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: code checkout
+        uses: actions/checkout@v4
+
+      - name: setup java, Build with custom actions
+        id: actions-tag
+        uses: madhav1699/GitHub-custom-actions-myedition/.github/actions/java-build@main
+        with:
+          java-version: ${{inputs.java-version}}
+          distribution: ${{inputs.distribution}}
+          artifact-name: ${{inputs.artifact-name}}
+
+      - name: CodeBuild Summary
+        run: |
+          pwd
+          echo "Code checkout, Build, Artifact upload is completed successfully!"
+          echo "Application Java Version: ${{inputs.java-version}}"
+          echo "${{steps.actions-tag.outputs.code_test_output}}"
+          echo "${{steps.actions-tag.outputs.code_build_output}}"
+          echo "${{steps.actions-tag.outputs.code_artifact_output}}"
+
+
+  job2:
+    name: Docker Build, login and push the image
+    needs: 
+      - job1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker Build, Login, Push with Custom actions
+        id: action-tag
+        uses: madhav1699/GitHub-custom-actions-myedition/.github/actions/docker-build@main
+        with:
+          image-name: ${{env.image-name}}
+          image-tag: ${{github.sha}}
+          docker-username: ${{vars.docker_username}}
+          docker-password: ${{secrets.docker_password}}
+
+      - name: Docker Push Summary
+        run: |
+          echo "Docker Build and Image Pushed Completed Successfully!"
+          echo "Docker Image name is: ${{env.image-name}}:${{github.sha}}"
+          echo " Dcoker Build result: ${{steps.action-tag.outputs.docker_build_output}}"
+          echo "Docker Push result: ${{steps.action-tag.outputs.docker_push_output}}"
+
+  job3:
+    name: Dev Environment
+    needs: [job1, job2]
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: http://myhcltech.dev
+    if: ${{inputs.environment == 'dev'}}
+    steps:
+      - name: Dev environment Page
+        run: |
+          echo "Dev environment Validation successfull!"  
+
+  job4:
+    name: Stage Environment
+    needs: [job1, job2]
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: http://myhcltech.stage
+    if: ${{inputs.environment == 'staging'}}
+    steps:
+      - name: Stage environment Page
+        run: |
+          echo "Stage environment Validation successfull!" 
+
+  job5:
+    name: Production Environment
+    needs: [job1, job2]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: http://myhcltech.prod
+    if: ${{inputs.environment == 'production'}}
+    steps:
+      - name: Production environment Page
+        run: |
+          echo "Production environment Validation successfull!" 
+
+
+          
+          
+
+
