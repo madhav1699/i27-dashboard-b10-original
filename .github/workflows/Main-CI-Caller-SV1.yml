@@ -29,8 +29,8 @@ on:
 
 concurrency:
   group: CI-${{github.ref}}
-  cancel-in-progress: true
-  
+  cancel-in-progress: true  #adding comment to verify
+
 jobs:
   mainjob:
     name: This is Caller worflow service v1
