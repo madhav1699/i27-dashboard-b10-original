@@ -1,0 +1,39 @@
+name: 09-2-string-functions
+on: 
+    workflow_dispatch: 
+jobs:
+    string-functions-demo:
+        runs-on: ubuntu-latest
+        steps:
+        - name: contains()
+          run: |
+            echo "==========================="
+            echo "contains()"
+            echo "==========================="
+            echo "ref contains main         : ${{ contains(github.ref, 'main')}}"
+            echo "repo contains dashboard   : ${{ contains(github.repository, 'dashboard')}}"
+            echo "actor contains  a          : ${{ contains(github.actor, 'a')}}"
+            echo "==========================="
+        - name: Use contians() in condition
+          if: contains(github.repository, 'new')
+          run: echo "Repo contains dashboard"
+        - name: startsWith()
+          run: |
+            echo "==========================="
+            echo "startsWith()"
+            echo "==========================="
+            echo "ref_name starts with mast : ${{ startsWith(github.ref_name, 'mast')}}"
+        - name: endsWith()
+          run: | 
+            echo "==========================="
+            echo "endsWith()"
+            echo "==========================="
+            echo "repo name ends with b10   : ${{ endsWith(github.repository, 'b10')}}"
+            echo "==========================="
+        - name: format()
+          run: |
+            echo "==========================="
+            echo "format()"
+            echo "==========================="
+            #echo "Worflow Triggered by devopswithcloud , branch is master and run run_number"
+            echo "${{ format('Worflow Triggered by: {0} and branch is {1} also run is {2}', github.actor, github.ref_name, github.run_number)}}" 

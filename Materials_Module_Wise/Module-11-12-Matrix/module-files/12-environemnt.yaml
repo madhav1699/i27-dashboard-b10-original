@@ -1,0 +1,46 @@
+name: 12-1-environment
+on:
+    workflow_dispatch: 
+jobs:
+    deploy-dev:
+      name: Deploy to Developement
+      runs-on: ubuntu-latest
+      environment: 
+        name: development
+        url: https://dev.i27academy.com
+      steps:
+        - run: |
+            echo "Deploying to Dev Environment"
+            echo "==============================="
+            echo "STAGING ENVIRONMENT Variables"
+            echo "STAGING_DB_URL is: ${{ vars.STAGING_DB_URL}}"
+            echo "==============================="
+    deploy-staging:
+      name: Deploy to Staging
+      runs-on: ubuntu-latest
+      needs: deploy-dev
+      environment: 
+        name: staging
+        url: https://stage.i27academy.com
+      steps:
+        - run: |
+            echo "Deploying to Stage Environment"
+            echo "==============================="
+            echo "STAGING ENVIRONMENT Variables"
+            echo "STAGING_DB_URL is: ${{ vars.STAGING_DB_URL}}"
+            echo "==============================="
+
+    deploy-production:
+      name: Deploy to Production
+      runs-on: ubuntu-latest
+      needs: deploy-staging
+      environment: 
+        name: production
+        url: https://i27academy.com
+      steps:
+        - run: |
+            echo "Deploying to Prod Environment"
+            echo "==============================="
+            echo "Production ENVIRONMENT Variables"
+            echo "STAGING_DB_URL is: ${{ vars.PROD_DB_URL}}"
+            echo "==============================="

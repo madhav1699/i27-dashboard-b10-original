@@ -1,0 +1,44 @@
+name: 11-2-multi-dimension-matrix
+on:
+    workflow_dispatch: 
+jobs:
+    test:
+        strategy:
+            fail-fast: false
+            #max-parallel: 1
+            # max-parallel default is to run all matrix job at the same time.
+            matrix:
+                java-version: ['17', '21']
+                os: [ubuntu-latest, windows-latest]
+                exclude:
+                # remove java 17 on windos from the matrix 
+                  - java-version: '17'
+                    os: windows-latest
+                include:
+                  - java-version: 21
+                    os: ubuntu-latest
+                    is-primary: true
+        name:  Test - Java ${{ matrix.java-version}} on ${{matrix.os}}
+        runs-on: ${{matrix.os}}
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v3
+          - name: Setup Java ${{ matrix.java-version}}
+            uses: actions/setup-java@v4
+            with:
+                java-version: ${{ matrix.java-version}}
+                distribution: temurin
+                cache: maven      # ~/.m2 arifacts HASH 
+          - run: mvn test 
+            name: Running MVN tests
+          - name: Primary Combination Maker 
+            if: matrix.is-primary == true
+            run: |
+                echo "This is the Primary test combination"
+                echo "Java ${{matrix.java-version}} on ${{matrix.os}}"
+          - name: Show Matrix Combination
+            run: |
+              echo "Java Version    : ${{ matrix.java-version}}"
+              echo "OS              : ${{ matrix.os}}"
+              echo "Runner OS       : ${{runner.os}}"
+# this creates 4 parallel jobs 

@@ -1,0 +1,23 @@
+name: 11-1-Matrix-Single Dimentions
+on: 
+  workflow_dispatch: 
+jobs:
+    test:
+      strategy:
+        matrix:
+          java-version: ['17', '21']
+      name: Test - Java ${{ matrix.java-version}}
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+        - name: Setup Java ${{ matrix.java-version}}
+          uses: actions/setup-java@v4
+          with:
+            java-version: ${{ matrix.java-version}}
+            distribution: temurin
+            cache: maven      # ~/.m2 arifacts HASH 
+        - run: mvn test 
+        - name: Print matrix Value
+          run: |
+            echo "Running on Java ${{ matrix.java-version}}"
