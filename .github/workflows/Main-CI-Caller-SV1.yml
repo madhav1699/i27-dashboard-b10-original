@@ -26,6 +26,11 @@ on:
         description: skip the tests?
         type: boolean
         default: false
+
+concurrency:
+  group: CI-${{github.ref}}
+  cancel-in-progress: true
+  
 jobs:
   mainjob:
     name: This is Caller worflow service v1
