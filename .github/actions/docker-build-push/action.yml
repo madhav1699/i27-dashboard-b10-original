@@ -1,0 +1,105 @@
+# this action.yml will have 5 sections:
+# name:         what is this acion called
+# description:  What it does
+# inputs:       what values this action accepts (OPTIONAL)
+# outputs:      what values this action returns (OPTIONAL)
+# runs:         how it executes(execution logic)
+
+#=============================== Creating Composite Action =========================
+name: Docker Build and Push Action
+description: |
+  Composite action for i27Academy services.
+  Logs in to Docker Hub, builds a Docker image, tags it and pushes it.
+  Eliminates repeated docker login/build/push steps across workflows.
+
+inputs:
+  registry-username:
+    description: Docker registry username
+    required: true
+
+  registry-password:
+    description: Docker registry password or token
+    required: true
+
+  image-name:
+    description: Docker image repository name (e.g. devopswithcloudhub/i27-devops-dashboard)
+    required: true
+
+  image-tag:
+    description: Tag to apply to the built image (e.g. commit SHA)
+    required: true
+
+  context:
+    description: Build context path passed to docker build
+    required: false
+    default: '.'
+
+  dockerfile:
+    description: Path to the Dockerfile
+    required: false
+    default: 'Dockerfile'
+
+outputs:
+  full-image:
+    description: Full image reference — name:tag
+    value: ${{ steps.push.outputs.full-image }}
+
+runs:
+  using: composite
+  steps:
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v4
+      with:
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-password }}
+
+    - name: List the files and path
+      shell: bash                        # REQUIRED in composite actions
+      run: |
+        echo "Current path is "
+        pwd
+        echo "List the files in the current path"
+        ls -la
+
+    - name: Build Docker Image
+      shell: bash                        # REQUIRED in composite actions
+      run: |
+        echo "------------------ Building Docker Image  ---------------------"
+        docker build \
+          -f "${{ inputs.dockerfile }}" \
+          -t ${{ inputs.image-name }}:${{ inputs.image-tag }} \
+          "${{ inputs.context }}"
+
+    - name: Push Docker Image
+      id: push
+      shell: bash                        # REQUIRED in composite actions
+      run: |
+        echo "------------------ Pushing Docker Image  ---------------------"
+        docker push ${{ inputs.image-name }}:${{ inputs.image-tag }}
+        echo "full-image=${{ inputs.image-name }}:${{ inputs.image-tag }}" >> $GITHUB_OUTPUT
+
+    - name: Docker Image Details
+      shell: bash                        # REQUIRED in composite actions
+      run: |
+        echo "-----------------------------------------------------"
+        echo "Docker Image Pushed Succesfully"
+        echo "-----------------------------------------------------"
+        echo "Repository    : ${{ inputs.image-name }}"
+        echo "Tag is        : ${{ inputs.image-tag }}"
+        echo "Full image is : ${{ inputs.image-name }}:${{ inputs.image-tag }}"
+        echo "-----------------------------------------------------"
+
+# ════════════════════════════════════════════════════════════
+# KEY RULES for composite actions:
+#
+# 1. shell: bash is REQUIRED on every run: step
+#    → unlike regular workflows, shell is not inherited
+#
+# 2. inputs.* accesses inputs defined above
+#
+# 3. outputs.value must point to a step output
+#    → step must have id: for this to work
+#
+# 4. using: composite — always this for step-based actions
+# ════════════════════════════════════════════════════════════
