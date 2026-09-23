@@ -1,0 +1,12 @@
+# this is a caller workflow
+name: microservice-1-workflow
+on: 
+    workflow_dispatch: 
+jobs:
+    call-build-job:
+        name: Call Reusable Build
+        uses: devopswithcloud/i27academy-devops-actions/.github/workflows/i27-microservices-workflow.yaml@main
+
+
+            
+            

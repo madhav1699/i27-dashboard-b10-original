@@ -1,0 +1,342 @@
+name: i27Academy DevOps Dashboard - CI/CD
+
+# ════════════════════════════════════════════════════════════
+# Complete CI/CD Pipeline for i27Academy DevOps Dashboard using GitHub Actions and Google Cloud Run.
+#
+# Flow:
+#   build-test → docker-build-push → deploy-dev → deploy-staging
+#   → deploy-production (approval) → summary
+#
+# Prerequisites:
+#   GitHub Secrets:
+#     GCP_SERVICE_ACCOUNT           → from gcp-oidc-setup.sh output
+#     GCP_WORKLOAD_IDENTITY_PROVIDER → from gcp-oidc-setup.sh output
+#
+#   GitHub Environments:
+#     development → no protection
+#     staging     → no protection
+#     production  → required reviewers , only devopswithcloud should have access to deploy to prod
+#
+#   GCP Setup:
+#     Artifact Registry repo created:
+#       gcloud artifacts repositories create i27academy-devops-dashboard \
+#         --repository-format=docker \
+#         --location=us-central1 \
+#         --project=i27learn-project
+# ════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - 'Dockerfile'
+  workflow_dispatch:
+
+
+env:
+  PROJECT_ID:   i27learn-project
+  REGION:       us-central1
+  GAR_REPO:     i27academy-devops-dashboard
+  IMAGE_NAME:   i27academy-devops-dashboard
+  SERVICE_NAME: i27academy-devops-dashboard
+  APP_PORT:     8000
+
+jobs:
+
+  # ── Job 1: Build, Test and Package ─────────────────────────
+  build-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.tag.outputs.value }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: Build and test
+        run: mvn clean package
+
+      - name: Generate image tag
+        id: tag
+        run: |
+          echo "value=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "Image tag: $(echo ${{ github.sha }} | cut -c1-7)"
+
+  # ── Job 2: Docker Build and Push to Google Artifact Registry ──────
+  docker-build-push:
+    name: Docker Build and Push
+    runs-on: ubuntu-latest
+    needs: build-test
+    outputs:
+      full-image: ${{ steps.image.outputs.value }}
+
+    permissions:
+      contents: read
+      id-token: write           # REQUIRED for OIDC authentication
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP via OIDC
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Set full image name
+        id: image
+        run: |
+          FULL_IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ needs.build-test.outputs.image-tag }}"
+          echo "value=$FULL_IMAGE" >> $GITHUB_OUTPUT
+          echo "Full image: $FULL_IMAGE"
+
+      - name: Docker Build
+        run: |
+          docker build \
+            -t ${{ steps.image.outputs.value }} \
+            -f Dockerfile \
+            .
+
+      - name: Docker Push to Artifact Registry
+        run: |
+          docker push ${{ steps.image.outputs.value }}
+          echo "Image pushed: ${{ steps.image.outputs.value }} ✅"
+
+  # ── Job 3: Deploy to Development (Automatic) ───────────────
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [ build-test, docker-build-push ]
+    outputs:
+      url: ${{ steps.url.outputs.value }}
+    environment:
+      name: development
+      url: ${{ steps.url.outputs.value }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to GCP via OIDC
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Cloud Run (Development)
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }}-dev \
+            --image=${{ needs.docker-build-push.outputs.full-image }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --platform=managed \
+            --port=${{ env.APP_PORT }} \
+            --allow-unauthenticated \
+            --set-env-vars="SERVER_PORT=8000,SPRING_PROFILES_ACTIVE=cloudrun" \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=2 \
+            --quiet 2>&1 || \
+          gcloud run services update ${{ env.SERVICE_NAME }}-dev \
+            --image=${{ needs.docker-build-push.outputs.full-image }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --set-env-vars="SERVER_PORT=8000,SPRING_PROFILES_ACTIVE=cloudrun" \
+            --quiet
+
+      - name: Get Cloud Run service URL
+        id: url
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }}-dev \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --format='value(status.url)')
+          echo "value=$URL" >> $GITHUB_OUTPUT
+          echo "Service URL: $URL"
+
+      - name: Print deployment info
+        run: |
+          echo "============================="
+          echo "DEPLOYED TO DEVELOPMENT ✅"
+          echo "============================="
+          echo "Image     : ${{ needs.docker-build-push.outputs.full-image }}"
+          echo "Image Tag : ${{ needs.build-test.outputs.image-tag }}"
+          echo "Service   : ${{ env.SERVICE_NAME }}-dev"
+          echo "URL       : ${{ steps.url.outputs.value }}"
+          echo "============================="
+
+  # ── Job 4: Deploy to Staging (Automatic) ───────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [ build-test, docker-build-push, deploy-dev ]
+    outputs:
+      url: ${{ steps.url.outputs.value }}
+    environment:
+      name: staging
+      url: ${{ steps.url.outputs.value }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to GCP via OIDC
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Cloud Run (Staging)
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }}-staging \
+            --image=${{ needs.docker-build-push.outputs.full-image }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --platform=managed \
+            --port=${{ env.APP_PORT }} \
+            --allow-unauthenticated \
+            --set-env-vars="SERVER_PORT=8000,SPRING_PROFILES_ACTIVE=cloudrun" \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=3 \
+            --quiet 2>&1 || \
+          gcloud run services update ${{ env.SERVICE_NAME }}-staging \
+            --image=${{ needs.docker-build-push.outputs.full-image }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --set-env-vars="SERVER_PORT=8000,SPRING_PROFILES_ACTIVE=cloudrun" \
+            --quiet
+
+      - name: Get Cloud Run service URL
+        id: url
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }}-staging \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --format='value(status.url)')
+          echo "value=$URL" >> $GITHUB_OUTPUT
+          echo "Service URL: $URL"
+
+      - name: Print deployment info
+        run: |
+          echo "============================="
+          echo "DEPLOYED TO STAGING ✅"
+          echo "============================="
+          echo "Image     : ${{ needs.docker-build-push.outputs.full-image }}"
+          echo "Image Tag : ${{ needs.build-test.outputs.image-tag }}"
+          echo "Service   : ${{ env.SERVICE_NAME }}-staging"
+          echo "URL       : ${{ steps.url.outputs.value }}"
+          echo "============================="
+
+  # ── Job 5: Deploy to Production (Approval Required) ────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [ build-test, docker-build-push, deploy-dev, deploy-staging ]
+    outputs:
+      url: ${{ steps.url.outputs.value }}
+    environment:
+      name: production
+      url: ${{ steps.url.outputs.value }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to GCP via OIDC
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Cloud Run (Production)
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }}-prod \
+            --image=${{ needs.docker-build-push.outputs.full-image }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --platform=managed \
+            --port=${{ env.APP_PORT }} \
+            --allow-unauthenticated \
+            --set-env-vars="SERVER_PORT=8000,SPRING_PROFILES_ACTIVE=cloudrun" \
+            --memory=1Gi \
+            --cpu=2 \
+            --min-instances=1 \
+            --max-instances=10 \
+            --quiet 2>&1 || \
+          gcloud run services update ${{ env.SERVICE_NAME }}-prod \
+            --image=${{ needs.docker-build-push.outputs.full-image }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --set-env-vars="SERVER_PORT=8000,SPRING_PROFILES_ACTIVE=cloudrun" \
+            --quiet
+
+      - name: Get Cloud Run service URL
+        id: url
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }}-prod \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --format='value(status.url)')
+          echo "value=$URL" >> $GITHUB_OUTPUT
+          echo "Service URL: $URL"
+
+      - name: Print deployment info
+        run: |
+          echo "============================="
+          echo "DEPLOYED TO PRODUCTION ✅"
+          echo "============================="
+          echo "Image     : ${{ needs.docker-build-push.outputs.full-image }}"
+          echo "Image Tag : ${{ needs.build-test.outputs.image-tag }}"
+          echo "Service   : ${{ env.SERVICE_NAME }}-prod"
+          echo "URL       : ${{ steps.url.outputs.value }}"
+          echo "Approved by: ${{ github.actor }}"
+          echo "============================="
+
+  # ── Job 6: Summary (Always runs) ───────────────────────────
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [ build-test, docker-build-push, deploy-dev, deploy-staging, deploy-production ]
+    if: always()
+
+    steps:
+      - name: Write deployment summary
+        run: |
+          echo "## i27Academy DevOps Dashboard — Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build Info" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Tag | \`${{ needs.build-test.outputs.image-tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Full Image | \`${{ needs.docker-build-push.outputs.full-image }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | Status | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Development | ${{ needs.deploy-dev.result }} | ${{ needs.deploy-dev.outputs.url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | ${{ needs.deploy-staging.result }} | ${{ needs.deploy-staging.outputs.url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ needs.deploy-production.result }} | ${{ needs.deploy-production.outputs.url }} |" >> $GITHUB_STEP_SUMMARY

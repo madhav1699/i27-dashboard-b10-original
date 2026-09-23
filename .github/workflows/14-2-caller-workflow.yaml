@@ -1,0 +1,11 @@
+name: 14-2-caller-workflow
+on: 
+    workflow_dispatch: 
+jobs:
+    call-build-job:
+        name: Call Reusable Build
+        uses: ./.github/workflows/14-1.Reusable-java-build.yaml
+        with:
+            java-version: '21'
+            run-tests: false
+            

@@ -1,0 +1,32 @@
+name: 14.1-Java-Reusable-java-build
+
+on: 
+    workflow_call:
+        inputs:
+          java-version:
+            description: Java version to use
+            required: false
+            type: string
+            default: '21'
+          run-tests:
+            description: Run tests before building
+            required: false
+            type: boolean
+            default: true
+
+#=================================
+# This is the CALLED Workflow (reusable workflow)
+# It is triggered by workflow_call - not by pull or push
+# this reusbale worklow are placed under .github/workflows/ in the same or a centralm repo (typically we use this)
+
+jobs:
+    build: 
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout code           
+          uses: actions/checkout@v3
+        - name: Build and test
+          uses: devopswithcloud/i27academy-devops-actions/.github/actions/java-build@main
+          with:
+            java-version: ${{ inputs.java-version }}
+            run-tests: ${{ inputs.run-tests}}
